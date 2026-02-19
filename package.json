@@ -1,0 +1,52 @@
+{
+  "name": "@sharkord/desktop",
+  "version": "0.0.1",
+  "main": "dist/index.js",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsc && electron dist/index.js",
+    "build": "tsc && electron-builder --win",
+    "build:dir": "tsc && electron-builder --dir",
+    "format": "prettier --write \"**/*.ts*\" --config ./.prettierrc.json",
+    "lint": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives",
+    "lint:fix": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives --fix",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.1",
+    "electron": "^31.0.0",
+    "electron-builder": "^25.0.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-unused-imports": "^4.1.4",
+    "prettier": "^3.5.3",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+  },
+  "build": {
+    "appId": "com.sharkord.desktop",
+    "productName": "Sharkord",
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

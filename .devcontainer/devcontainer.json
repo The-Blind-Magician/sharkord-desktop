@@ -1,0 +1,13 @@
+{
+  "name": "Sharkord — Electron Builder (Wine)",
+  "image": "electronuserland/builder:wine",
+  "workspaceFolder": "/workspaces/sharkord-desktop",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/sharkord-desktop,type=bind,consistency=cached",
+  "runArgs": ["--privileged"],
+  "remoteUser": "root",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [],
+  "postCreateCommand": "echo 'Dev container based on electronuserland/builder:wine'"
+}
