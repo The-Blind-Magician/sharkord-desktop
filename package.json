@@ -11,13 +11,15 @@
     "format": "prettier --write \"**/*.ts*\" --config ./.prettierrc.json",
     "lint": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives",
     "lint:fix": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives --fix",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "dist": "electron-builder",
+    "release": "tsc && electron-builder --win --publish=always"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "electron": "^31.0.0",
-    "electron-builder": "^25.0.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^8.56.0",
     "eslint-plugin-unused-imports": "^4.1.4",
     "prettier": "^3.5.3",
@@ -25,9 +27,11 @@
     "typescript": "^5.3.0"
   },
   "dependencies": {
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.8.3"
   },
   "build": {
-    "appId": "com.sharkord.desktop",
+    "appId": "com.the-blind-magician.sharkord.desktop",
     "productName": "Sharkord",
     "files": [
       "dist/**/*",
@@ -47,6 +51,13 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "The-Blind-Magician",
+        "repo": "sharkord-desktop"
+      }
+    ]
   }
 }
