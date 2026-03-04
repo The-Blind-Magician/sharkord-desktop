@@ -53,7 +53,7 @@ if (!singletonLock) {
         log.error('Updater error', err);
       });
     }
-    
+
     showMainWindow();
   });
 
@@ -71,16 +71,6 @@ if (!singletonLock) {
       tray = null;
     }
   });
-
-  // app.on('activate', () => {
-
-  //   if (mainWindow === null) {
-  //     createWindow();
-  //   } else {
-  //     showMainWindow();
-  //   }
-  // });
-
 }
 
 const showMainWindow = () => {
