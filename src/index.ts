@@ -9,6 +9,7 @@ autoUpdater.logger = log;
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let isQuitting = false;
 
 const trayIconPath = path.join(app.getAppPath(), 'public', 'icon.ico');
 const preloadPath = path.join(app.getAppPath(), 'dist', 'preload.js');
@@ -40,7 +41,10 @@ const createTray = () => {
       },
       {
         label: 'Quit',
-        click: () => app.quit(),
+        click: () => {
+          isQuitting = true;
+          app.quit();
+        },
       },
     ])
   );
@@ -66,6 +70,10 @@ const createWindow = () => {
   mainWindow.loadURL('https://sharkord.thehooligans.net');
 
   mainWindow.on('close', (event) => {
+    if (isQuitting) {
+      return;
+    }
+
     event.preventDefault();
     mainWindow?.hide();
   });
@@ -103,6 +111,15 @@ app.on('ready', () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
+  mainWindow = null;
+  if (tray) {
+    tray.destroy();
+    tray = null;
   }
 });
 

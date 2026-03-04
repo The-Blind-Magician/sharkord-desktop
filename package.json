@@ -1,8 +1,8 @@
 {
   "name": "@sharkord/desktop",
   "author": "TheBlindMagician",
-  "description": "An Electron app for running Sharkord natively in windows",
-  "version": "0.0.5",
+  "description": "Sharkord Desktop",
+  "version": "0.0.6",
   "main": "dist/index.js",
   "type": "module",
   "private": true,
