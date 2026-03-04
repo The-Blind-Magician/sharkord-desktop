@@ -1,12 +1,14 @@
 {
   "name": "@sharkord/desktop",
-  "version": "0.0.1",
+  "author": "TheBlindMagician",
+  "description": "An Electron app for running Sharkord natively in windows",
+  "version": "0.0.5",
   "main": "dist/index.js",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "tsc && electron dist/index.js",
-    "build": "tsc && electron-builder --win",
+    "dev": "tsc && electron --no-sandbox dist/index.js",
+    "build": "rm -rf ./dist && tsc && electron-builder --win",
     "build:dir": "tsc && electron-builder --dir",
     "format": "prettier --write \"**/*.ts*\" --config ./.prettierrc.json",
     "lint": "eslint ./src/**/*.ts --ext ts --report-unused-disable-directives",
@@ -36,22 +38,12 @@
     "productName": "Sharkord",
     "files": [
       "dist/**/*",
-      "node_modules/**/*"
+      "node_modules/**",
+      "package.json",
+      "public/**"
     ],
     "win": {
-      "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        "portable"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "icon": "public/icon.ico"
     },
     "publish": [
       {

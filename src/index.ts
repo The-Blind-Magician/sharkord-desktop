@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu, Tray } from 'electron';
 import pkg from 'electron-updater';
 const { autoUpdater } = pkg;
 import log from 'electron-log';
@@ -8,13 +8,55 @@ log.transports.file.level = 'info';
 autoUpdater.logger = log;
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+
+const trayIconPath = path.join(app.getAppPath(), 'public', 'icon.ico');
+const preloadPath = path.join(app.getAppPath(), 'dist', 'preload.js');
+
+const showMainWindow = () => {
+  if (mainWindow === null) {
+    createWindow();
+    return;
+  }
+
+  if (mainWindow.isMinimized()) {
+    mainWindow.restore();
+  }
+
+  mainWindow.show();
+  mainWindow.focus();
+};
+
+const createTray = () => {
+  if (tray !== null) return;
+
+  tray = new Tray(trayIconPath);
+  tray.setToolTip('Sharkord');
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      {
+        label: 'Open Sharkord',
+        click: () => showMainWindow(),
+      },
+      {
+        label: 'Quit',
+        click: () => app.quit(),
+      },
+    ])
+  );
+
+  tray.on('click', showMainWindow);
+};
 
 const createWindow = () => {
   mainWindow = new BrowserWindow({
+    titleBarStyle: 'default',
+    autoHideMenuBar: true,
+    icon: trayIconPath,
     width: 1200,
     height: 800,
     webPreferences: {
-      preload: path.join('./preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -23,16 +65,15 @@ const createWindow = () => {
   // Load the remote URL
   mainWindow.loadURL('https://sharkord.thehooligans.net');
 
-  // Open DevTools in development (optional, remove for production)
-  // mainWindow.webContents.openDevTools();
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
+  mainWindow.on('close', (event) => {
+    event.preventDefault();
+    mainWindow?.hide();
   });
 };
 
 app.on('ready', () => {
   createWindow();
+  createTray();
 
   if (app.isPackaged) {
     autoUpdater.autoDownload = false;
@@ -68,5 +109,7 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (mainWindow === null) {
     createWindow();
+  } else {
+    showMainWindow();
   }
 });
