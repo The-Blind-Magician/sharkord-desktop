@@ -1,8 +1,26 @@
-import { app, BrowserWindow, Menu, Tray } from 'electron';
-import pkg from 'electron-updater';
-const { autoUpdater } = pkg;
+import {
+  app,
+  dialog,
+  BrowserWindow,
+  Tray,
+} from 'electron';
 import log from 'electron-log';
+import pkg from 'electron-updater';
 import path from 'path';
+import { loadAppConfig } from './config.js';
+import { setupAutoUpdater } from './libs/updater.js';
+import {
+  createSharkordSecurity,
+  type SharkordFrameGuard,
+} from './libs/sharkordSecurity.js';
+import {
+  configureScreenCapture,
+  registerScreencastIpc,
+} from './libs/screencast.js';
+import { createAppTray } from './libs/tray.js';
+import { createMainWindow, showOrCreateMainWindow } from './libs/mainWindow.js';
+
+const { autoUpdater } = pkg;
 
 log.transports.file.level = 'info';
 autoUpdater.logger = log;
@@ -10,6 +28,11 @@ autoUpdater.logger = log;
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
 let isQuitting = false;
+let sharkordUrl: string | null = null;
+let isSharkordFrame: SharkordFrameGuard = () => false;
+let assertSharkordFrame: (url: string) => void = () => {
+  throw new Error('Sharkord security is not initialized.');
+};
 
 const trayIconPath = path.join(app.getAppPath(), 'public', 'icon.ico');
 const preloadPath = path.join(app.getAppPath(), 'dist', 'preload.js');
@@ -17,44 +40,50 @@ const preloadPath = path.join(app.getAppPath(), 'dist', 'preload.js');
 const singletonLock = app.requestSingleInstanceLock();
 
 if (!singletonLock) {
-    app.quit();
+  app.quit();
 } else {
   app.on('second-instance', () => {
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    showMainWindow();
   });
+
   app.on('ready', () => {
-    createWindow();
+    try {
+      const config = loadAppConfig();
+      const security = createSharkordSecurity(new URL(config.sharkordUrl).origin);
+
+      sharkordUrl = config.sharkordUrl;
+      isSharkordFrame = security.isSharkordFrame;
+      assertSharkordFrame = security.assertSharkordFrame;
+      log.info(`Loaded Sharkord destination from ${config.configPath}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+
+      log.error('Failed to load Sharkord config', error);
+      dialog.showErrorBox('Sharkord configuration error', message);
+      app.quit();
+      return;
+    }
+
+    registerScreencastIpc({ assertSharkordFrame });
+    configureScreenCapture({
+      isSharkordFrame,
+      getMainWindow: () => mainWindow,
+    });
+
+    mainWindow = createMainWindow({
+      sharkordUrl,
+      trayIconPath,
+      preloadPath,
+      isSharkordFrame,
+      isQuitting: () => isQuitting,
+    });
+
     createTray();
+    showMainWindow();
 
     if (app.isPackaged) {
-      autoUpdater.autoDownload = false;
-      autoUpdater.checkForUpdates();
-
-      autoUpdater.on('update-available', () => {
-        // optionally prompt the user, then:
-        autoUpdater.downloadUpdate();
-      });
-
-      autoUpdater.on('download-progress', (p) => {
-        // emit progress to renderer or log
-        log.info(`Download progress: ${p.percent}%`);
-      });
-
-      autoUpdater.on('update-downloaded', () => {
-        // prompt user then:
-        autoUpdater.quitAndInstall();
-      });
-
-      autoUpdater.on('error', (err) => {
-        log.error('Updater error', err);
-      });
+      setupAutoUpdater(autoUpdater, log);
     }
-
-    showMainWindow();
   });
 
   app.on('window-all-closed', () => {
@@ -66,74 +95,32 @@ if (!singletonLock) {
   app.on('before-quit', () => {
     isQuitting = true;
     mainWindow = null;
-    if (tray) {
-      tray.destroy();
-      tray = null;
-    }
+    tray?.destroy();
+    tray = null;
   });
 }
 
 const showMainWindow = () => {
-  if (mainWindow === null) {
-    createWindow();
-    return;
-  }
-
-  if (mainWindow.isMinimized()) {
-    mainWindow.restore();
-  }
-
-  mainWindow.show();
-  mainWindow.focus();
+  mainWindow = showOrCreateMainWindow(mainWindow, () =>
+    createMainWindow({
+      sharkordUrl,
+      trayIconPath,
+      preloadPath,
+      isSharkordFrame,
+      isQuitting: () => isQuitting,
+    })
+  );
 };
 
 const createTray = () => {
   if (tray !== null) return;
 
-  tray = new Tray(trayIconPath);
-  tray.setToolTip('Sharkord');
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      {
-        label: 'Open Sharkord',
-        click: () => showMainWindow(),
-      },
-      {
-        label: 'Quit',
-        click: () => {
-          isQuitting = true;
-          app.quit();
-        },
-      },
-    ])
-  );
-
-  tray.on('click', showMainWindow);
-};
-
-const createWindow = () => {
-  mainWindow = new BrowserWindow({
-    titleBarStyle: 'default',
-    autoHideMenuBar: true,
-    icon: trayIconPath,
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: preloadPath,
-      nodeIntegration: false,
-      contextIsolation: true,
+  tray = createAppTray({
+    trayIconPath,
+    onOpen: showMainWindow,
+    onQuit: () => {
+      isQuitting = true;
+      app.quit();
     },
-  });
-
-  // Load the remote URL
-  mainWindow.loadURL('https://sharkord.thehooligans.net');
-
-  mainWindow.on('close', (event) => {
-    if (isQuitting) {
-      return;
-    }
-
-    event.preventDefault();
-    mainWindow?.hide();
   });
 };

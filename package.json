@@ -20,6 +20,8 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.46.1",
     "electron": "^31.0.0",
     "electron-builder": "^25.1.8",
@@ -31,7 +33,9 @@
   },
   "dependencies": {
     "electron-log": "^5.4.3",
-    "electron-updater": "^6.8.3"
+    "electron-updater": "^6.8.3",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "build": {
     "appId": "com.the-blind-magician.sharkord.desktop",
@@ -44,6 +48,9 @@
     ],
     "win": {
       "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "include": "scripts/preserve-config.nsh"
     },
     "publish": [
       {
